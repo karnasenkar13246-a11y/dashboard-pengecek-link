@@ -6,27 +6,47 @@
     <title>Dashboard Pengecek Link</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
-        h1 { text-align: center; color: #444; }
-        #dashboard { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: #444; }
+        
+        /* Gaya untuk area input baru */
+        #input-area { margin-bottom: 20px; }
+        textarea { width: 100%; min-height: 150px; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        button { display: block; width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+
         .link-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
         .link-item:last-child { border-bottom: none; }
-        .link-url { word-break: break-all; padding-right: 15px; } /* Menambahkan sedikit spasi */
-        .status { font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; white-space: nowrap; } /* Mencegah status turun baris */
+        .link-url { word-break: break-all; padding-right: 15px; }
+        .status { font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; white-space: nowrap; }
         .status-loading { background-color: #f0ad4e; }
         .status-success { background-color: #5cb85c; }
         .status-error { background-color: #d9534f; }
     </style>
 </head>
 <body>
-    <h1>Dashboard Pengecekan Link</h1>
-    <div id="dashboard">
-        <!-- Hasil akan ditampilkan di sini oleh JavaScript -->
+    <div class="container">
+        <h1>Dashboard Pengecekan Link</h1>
+
+        <!-- BAGIAN BARU: Area untuk menempelkan link -->
+        <div id="input-area">
+            <h2>Tempel Link di Sini (Satu Link per Baris)</h2>
+            <textarea id="links-input" placeholder="contoh.com&#10;situslain.net&#10;123.45.67.89"></textarea>
+            <button id="check-button">Cek Semua Link</button>
+        </div>
+
+        <hr>
+        
+        <!-- Hasil akan ditampilkan di sini -->
+        <div id="dashboard">
+            <p style="text-align: center;">Hasil pengecekan akan muncul di sini.</p>
+        </div>
     </div>
 
     <script>
-        // --- DAFTAR LINK YANG INGIN DICEK ---
-        // Anda bisa tetap menulis link tanpa https:// di sini
-        const daftarLink = [
+        // --- DAFTAR LINK DEFAULT ANDA ---
+        // Link ini akan otomatis terisi di kotak teks saat halaman dibuka.
+        const daftarLinkDefault = [
             "up31523.com", "up32834.com", "up33327.com", "up32839.com", "up33514.com",
             "up31386.com", "up33813.com", "up33837.com", "up33953.com", "up80242.com",
             "up80561.com", "up83174.com", "up83092.com", "up80546.com", "up80586.com",
@@ -35,48 +55,68 @@
             "heylink.me/togelup289", "lit.link/en/togelup00", "linkr.bio/togelup288",
             "link.space/@Tglup", "mez.ink/togelup00", "rebrand.ly/togelup888"
         ];
-
+        
         const dashboard = document.getElementById('dashboard');
+        const linksInput = document.getElementById('links-input');
+        const checkButton = document.getElementById('check-button');
 
-        // Fungsi untuk mengecek setiap URL
+        // Mengisi textarea dengan daftar link default Anda saat halaman pertama kali dimuat
+        linksInput.value = daftarLinkDefault.join('\n');
+
+        // Fungsi untuk mengecek satu URL
         async function checkUrlStatus(originalUrl, urlToCheck) {
-            // Cari elemen berdasarkan ID yang dibuat dari URL asli
             const itemElement = document.getElementById('item-' + originalUrl.replace(/[^a-zA-Z0-9]/g, ''));
+            if (!itemElement) return; // Lewati jika elemen tidak ditemukan
             const statusElement = itemElement.querySelector('.status');
 
             try {
-                // Gunakan URL yang sudah ada protokolnya untuk fetch
                 await fetch(urlToCheck, { method: 'HEAD', mode: 'no-cors' });
-                
                 statusElement.textContent = 'Bisa Diakses';
                 statusElement.className = 'status status-success';
-
             } catch (error) {
                 statusElement.textContent = 'Terblokir / Error';
                 statusElement.className = 'status status-error';
             }
         }
+        
+        // Fungsi utama yang akan dijalankan saat tombol diklik
+        function startCheck() {
+            // 1. Kosongkan hasil pengecekan sebelumnya
+            dashboard.innerHTML = '';
 
-        // --- PROSES UTAMA ---
-        // 1. Loop melalui setiap link di daftar
-        daftarLink.forEach(originalUrl => {
-            // 2. Buat elemen HTML untuk ditampilkan di dashboard
-            const item = document.createElement('div');
-            item.classList.add('link-item');
-            // ID dibuat dari URL asli agar unik
-            item.id = 'item-' + originalUrl.replace(/[^a-zA-Z0-9]/g, ''); 
-            item.innerHTML = `
-                <span class="link-url">${originalUrl}</span>
-                <span class="status status-loading">Mengecek...</span>
-            `;
-            dashboard.appendChild(item);
+            // 2. Ambil semua teks dari textarea, lalu pisah menjadi array per baris
+            //    .filter(url => url.trim() !== '') digunakan untuk menghapus baris kosong
+            const urlsToCheck = linksInput.value.split('\n').filter(url => url.trim() !== '');
 
-            // 3. Tambahkan "https://" ke URL untuk proses pengecekan
-            const urlToCheck = 'https://' + originalUrl;
+            if (urlsToCheck.length === 0) {
+                dashboard.innerHTML = '<p style="text-align:center;">Silakan masukkan setidaknya satu URL untuk dicek.</p>';
+                return;
+            }
 
-            // 4. Jalankan fungsi pengecekan dengan URL yang sudah lengkap
-            checkUrlStatus(originalUrl, urlToCheck);
-        });
+            // 3. Lakukan proses untuk setiap link yang ada di textarea
+            urlsToCheck.forEach(originalUrl => {
+                // Buat elemen HTML untuk ditampilkan di dashboard
+                const item = document.createElement('div');
+                item.classList.add('link-item');
+                // Buat ID unik dari URL agar statusnya bisa diupdate
+                item.id = 'item-' + originalUrl.replace(/[^a-zA-Z0-9]/g, ''); 
+                item.innerHTML = `
+                    <span class="link-url">${originalUrl}</span>
+                    <span class="status status-loading">Mengecek...</span>
+                `;
+                dashboard.appendChild(item);
+
+                // Tambahkan "https://" ke URL untuk proses pengecekan
+                const urlWithProtocol = 'https://' + originalUrl;
+
+                // Jalankan fungsi pengecekan
+                checkUrlStatus(originalUrl, urlWithProtocol);
+            });
+        }
+
+        // Tambahkan event listener ke tombol "Cek Semua Link"
+        checkButton.addEventListener('click', startCheck);
+
     </script>
 </body>
 </html>
