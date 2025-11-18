@@ -10,8 +10,8 @@
         #dashboard { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .link-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
         .link-item:last-child { border-bottom: none; }
-        .link-url { word-break: break-all; }
-        .status { font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; }
+        .link-url { word-break: break-all; padding-right: 15px; } /* Menambahkan sedikit spasi */
+        .status { font-weight: bold; padding: 5px 10px; border-radius: 5px; color: white; white-space: nowrap; } /* Mencegah status turun baris */
         .status-loading { background-color: #f0ad4e; }
         .status-success { background-color: #5cb85c; }
         .status-error { background-color: #d9534f; }
@@ -25,68 +25,57 @@
 
     <script>
         // --- DAFTAR LINK YANG INGIN DICEK ---
+        // Anda bisa tetap menulis link tanpa https:// di sini
         const daftarLink = [
-            "up31523.com",
-            "up32834.com",
-            "up33327.com",
-            "up32839.com",
-            "up33514.com",
-            "up31386.com",
-            "up33813.com",
-            "up33837.com",
-            "up33953.com",
-            "up80242.com",
-            "up80561.com",
-            "up83174.com",
-            "up83092.com",
-            "up80546.com",
-            "up80586.com",
-            "up82108.com"
+            "up31523.com", "up32834.com", "up33327.com", "up32839.com", "up33514.com",
+            "up31386.com", "up33813.com", "up33837.com", "up33953.com", "up80242.com",
+            "up80561.com", "up83174.com", "up83092.com", "up80546.com", "up80586.com",
+            "up82108.com", "157.230.242.88", "152.42.244.111", "togelup88.it.com",
+            "togelup-amp52.com", "rtpslotup530.com", "linklist.bio/TOGELUP888",
+            "heylink.me/togelup289", "lit.link/en/togelup00", "linkr.bio/togelup288",
+            "link.space/@Tglup", "mez.ink/togelup00", "rebrand.ly/togelup888"
         ];
 
         const dashboard = document.getElementById('dashboard');
 
-        // Fungsi untuk menampilkan status awal (loading)
-        function displayInitialLinks() {
-            daftarLink.forEach(url => {
-                const item = document.createElement('div');
-                item.classList.add('link-item');
-                item.id = 'item-' + url.replace(/[^a-zA-Z0-9]/g, ''); // Buat ID unik
-                item.innerHTML = `
-                    <span class="link-url">${url}</span>
-                    <span class="status status-loading">Mengecek...</span>
-                `;
-                dashboard.appendChild(item);
-            });
-        }
-
         // Fungsi untuk mengecek setiap URL
-        async function checkUrlStatus(url) {
-            const itemElement = document.getElementById('item-' + url.replace(/[^a-zA-Z0-9]/g, ''));
+        async function checkUrlStatus(originalUrl, urlToCheck) {
+            // Cari elemen berdasarkan ID yang dibuat dari URL asli
+            const itemElement = document.getElementById('item-' + originalUrl.replace(/[^a-zA-Z0-9]/g, ''));
             const statusElement = itemElement.querySelector('.status');
 
             try {
-                // Menggunakan mode 'no-cors' untuk mendapatkan respons,
-                // meskipun kita tidak bisa membaca status code-nya.
-                // Ini adalah cara untuk "ping" sebuah situs dari browser.
-                const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+                // Gunakan URL yang sudah ada protokolnya untuk fetch
+                await fetch(urlToCheck, { method: 'HEAD', mode: 'no-cors' });
                 
-                // Dalam mode no-cors, kita tidak bisa cek response.ok atau response.status.
-                // Jika fetch berhasil tanpa error, kita anggap BISA DIAKSES.
                 statusElement.textContent = 'Bisa Diakses';
                 statusElement.className = 'status status-success';
 
             } catch (error) {
-                // Error biasanya terjadi karena masalah jaringan, DNS, atau diblokir.
                 statusElement.textContent = 'Terblokir / Error';
                 statusElement.className = 'status status-error';
             }
         }
 
-        // Jalankan pengecekan
-        displayInitialLinks();
-        daftarLink.forEach(url => {
-            checkUrlStatus(url);
+        // --- PROSES UTAMA ---
+        // 1. Loop melalui setiap link di daftar
+        daftarLink.forEach(originalUrl => {
+            // 2. Buat elemen HTML untuk ditampilkan di dashboard
+            const item = document.createElement('div');
+            item.classList.add('link-item');
+            // ID dibuat dari URL asli agar unik
+            item.id = 'item-' + originalUrl.replace(/[^a-zA-Z0-9]/g, ''); 
+            item.innerHTML = `
+                <span class="link-url">${originalUrl}</span>
+                <span class="status status-loading">Mengecek...</span>
+            `;
+            dashboard.appendChild(item);
+
+            // 3. Tambahkan "https://" ke URL untuk proses pengecekan
+            const urlToCheck = 'https://' + originalUrl;
+
+            // 4. Jalankan fungsi pengecekan dengan URL yang sudah lengkap
+            checkUrlStatus(originalUrl, urlToCheck);
         });
     </script>
 </body>
